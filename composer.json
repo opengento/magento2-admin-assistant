@@ -1,0 +1,21 @@
+{
+  "name": "opengento/module-admin-assistant",
+  "version": "1.0.0",
+  "description": "N/A",
+  "type": "magento2-module",
+  "require": {
+    "magento/framework": "*",
+    "opengento/module-openai-connector": "1.0.*"
+  },
+  "license": [
+    "Proprietary"
+  ],
+  "autoload": {
+    "files": [
+      "registration.php"
+    ],
+    "psr-4": {
+      "Opengento\\AdminAssistant\\": ""
+    }
+  }
+}
