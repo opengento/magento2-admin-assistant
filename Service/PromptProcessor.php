@@ -5,12 +5,12 @@ namespace Opengento\AdminAssistant\Service;
 use JsonException;
 use Magento\Framework\Exception\LocalizedException;
 use Opengento\OpenAIConnector\Api\GPTCompletionsInterface;
-use Opengento\AdminAssistant\Api\Service\AIRequestProcessorInterface;
+use Opengento\AdminAssistant\Api\Service\PromptProcessorInterface;
 use Magento\Framework\App\ResourceConnection;
 use Opengento\OpenAIConnector\Model\Exception\OpenAICompletionException;
 use const JSON_THROW_ON_ERROR;
 
-class AIRequestProcessor implements AIRequestProcessorInterface
+class PromptProcessor implements PromptProcessorInterface
 {
     public const MAX_CALL = 3;
 
@@ -51,13 +51,15 @@ class AIRequestProcessor implements AIRequestProcessorInterface
      */
     protected function generateInitialRequest(string $userQuestion): string
     {
-        return $this->GPTCompletions->getGPTCompletions(
+        $response = $this->GPTCompletions->getGPTCompletions(
             prompt     : __(
-                             "Je me pose cette question : %1. Ecrit moi uniquement la requete SQL, n'ajoute pas d'explications !",
+                             "I ask myself this question: %1. Just write me the SQL query, don't add explanations!",
                              $userQuestion
                          )->render(),
             temperature: 0
         );
+
+        return $this->extractSqlStatementFromString($response);
     }
 
     /**
@@ -65,14 +67,16 @@ class AIRequestProcessor implements AIRequestProcessorInterface
      */
     protected function fixRequest(string $userQuestion, string $errorMessage): string
     {
-        return $this->GPTCompletions->getGPTCompletions(
+        $response = $this->GPTCompletions->getGPTCompletions(
             prompt     : __(
-                             "Je me pose cette question : %1. Base toi sur cette erreur : %2. Ecrit moi uniquement la requete SQL, n'ajoute pas d'explications !",
+                             "I ask myself this question: %1. Base yourself on this error: %2. Just write me the SQL query, don't add explanations!",
                              $userQuestion,
                              $errorMessage
                          )->render(),
             temperature: 0
         );
+
+        return $this->extractSqlStatementFromString($response);
     }
 
     /**
@@ -83,11 +87,20 @@ class AIRequestProcessor implements AIRequestProcessorInterface
     {
         return $this->GPTCompletions->getGPTCompletions(
             prompt     : __(
-                             "Je me pose cette question : %1. J'ai cette donnée comme résultat : %2. Réponds à la question de manière concis en intérpretant les données. Oublie le coté code, tu t'adresse à un commercial, un responsable de marketing ou à un responsable de communication.",
+                             "I ask myself this question: %1. I have this data as a result: %2. Answer the question concisely by interpreting the data. Forget the code, you're talking to a salesperson, a marketing manager or a communications manager.",
                              $userQuestion,
                              json_encode($sqlResponse, JSON_THROW_ON_ERROR)
                          )->render(),
             temperature: 0
         );
+    }
+
+    protected function extractSqlStatementFromString(string $text): string
+    {
+        if (preg_match('/```sql(.*?)```/s', $text, $matches)) {
+            return trim($matches[1]);
+        }
+
+        return $text;
     }
 }
