@@ -6,5 +6,7 @@ namespace Opengento\AdminAssistant\Api\Service;
 
 interface PromptProcessorInterface
 {
-    public function execute(string $userQuestion): string;
+    public function getSqlDataFromPrompt(string $userQuestion): array;
+
+    public function interpretDataDependingOnUserPrompt(string $userQuestion, array $sqlResponse): string;
 }

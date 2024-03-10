@@ -25,7 +25,7 @@ class PromptProcessor implements PromptProcessorInterface
      * @throws JsonException
      * @throws LocalizedException
      */
-    public function execute(string $userQuestion): string
+    public function getSqlDataFromPrompt(string $userQuestion): array
     {
         $sqlRequest = $this->generateInitialRequest($userQuestion);
 
@@ -41,9 +41,7 @@ class PromptProcessor implements PromptProcessorInterface
             }
         }
 
-        return $sqlResponse
-            ? $this->interpretDataDependingOnUserPrompt($userQuestion, $sqlResponse)
-            : throw new LocalizedException(__('ChatGPT is unable to handle the question'));
+        return $sqlResponse ?? throw new LocalizedException(__('ChatGPT is unable to handle the question'));
     }
 
     /**
@@ -83,7 +81,7 @@ class PromptProcessor implements PromptProcessorInterface
      * @throws OpenAICompletionException
      * @throws JsonException
      */
-    protected function interpretDataDependingOnUserPrompt(string $userQuestion, array $sqlResponse): string
+    public function interpretDataDependingOnUserPrompt(string $userQuestion, array $sqlResponse): string
     {
         return $this->GPTCompletions->getGPTCompletions(
             prompt     : __(

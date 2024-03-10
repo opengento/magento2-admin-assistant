@@ -3,4 +3,8 @@
         xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
     <preference for="Opengento\AdminAssistant\Api\Service\PromptProcessorInterface"
                 type="Opengento\AdminAssistant\Service\PromptProcessor"/>
+    <preference for="Opengento\AdminAssistant\Api\Service\CsvFileNameGeneratorInterface"
+                type="Opengento\AdminAssistant\Service\CsvFileNameGenerator"/>
+    <preference for="Opengento\AdminAssistant\Api\Service\CsvFormatterInterface"
+                type="Opengento\AdminAssistant\Service\CsvFormatter"/>
 </config>
