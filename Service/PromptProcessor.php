@@ -4,6 +4,7 @@ namespace Opengento\AdminAssistant\Service;
 
 use JsonException;
 use Magento\Framework\Exception\LocalizedException;
+use Opengento\AdminAssistant\Model\Exception\ResourceLimitException;
 use Opengento\OpenAIConnector\Api\GPTCompletionsInterface;
 use Opengento\AdminAssistant\Api\Service\PromptProcessorInterface;
 use Magento\Framework\App\ResourceConnection;
@@ -41,7 +42,7 @@ class PromptProcessor implements PromptProcessorInterface
             }
         }
 
-        return $sqlResponse ?? throw new LocalizedException(__('ChatGPT is unable to handle the question'));
+        return $sqlResponse ?? throw new ResourceLimitException();
     }
 
     /**
