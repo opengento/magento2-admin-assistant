@@ -1,0 +1,137 @@
+<?php
+
+declare(strict_types=1);
+
+/** @var \Magento\Backend\Block\Template $block */
+?>
+
+<style>
+    .admin-assistant-chat {
+        position: fixed;
+        bottom: 1px;
+        right: 1px;
+        z-index: 999;
+    }
+    .admin-assistant-chat__cta {
+        background: #ffd758;
+        border: none;
+        height: 5rem;
+        border-radius: 4px;
+    }
+    .admin-assistant-chat__modal {
+        position: absolute;
+        bottom: 1px;
+        right: 1px;
+        padding: 2rem;
+        border-radius: 4px;
+        background: #eee;
+        width: 50rem;
+        box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+    }
+    .admin-assistant-chat__input {
+        width: 100%;
+        border: none;
+        border-radius: 4px;
+        padding: 6px;
+    }
+    .admin-assistant-chat__modal form {
+        display: flex;
+        gap: 1rem;
+    }
+    .admin-assistant-chat__send {
+        background-color: #eb5202;
+        color: white;
+        border: none;
+        border-radius: 4px;
+    }
+    .admin-assistant-chat__content {
+        list-style-type: none;
+        display: flex;
+        flex-direction: column-reverse;
+        gap: 12px;
+        max-height: 50rem;
+        overflow-y: auto;
+    }
+    .admin-assistant-chat__content .user {
+        background: #c1c1ff;
+        padding: 8px;
+        border-radius: 4px;
+        width: fit-content;
+        align-self: flex-end;
+    }
+    .admin-assistant-chat__content .chatgpt {
+        background: #fff;
+        padding: 8px;
+        border-radius: 4px;
+        width: fit-content;
+        align-self: flex-start;
+    }
+    .admin-assistant-chat__content .error {
+        border: 1px solid red;
+        color: red;
+    }
+</style>
+
+<div class="admin-assistant-chat" data-admin-assistant-chat>
+    <button class="admin-assistant-chat__cta" data-cta><?= __('Admin assistant') ?></button>
+
+    <div class="admin-assistant-chat__modal" style="display: none;" data-modal>
+        <ul class="admin-assistant-chat__content" data-content></ul>
+        <form method="POST" action="<?= $block->getUrl('adminassistant/prompt/request') ?>" data-user-prompt-form>
+            <textarea name="prompt" class="admin-assistant-chat__input" data-input></textarea>
+            <button type="submit" class="admin-assistant-chat__send">Send</button>
+            <input type="hidden" name="form_key" value="<?= $block->getFormKey() ?>" />
+        </form>
+    </div>
+</div>
+
+<script>
+    window.addEventListener("load", (event) => {
+        const chat = document.querySelector('[data-admin-assistant-chat]');
+        const cta = chat.querySelector('[data-cta]');
+        const modal = chat.querySelector('[data-modal]');
+        const content = chat.querySelector('[data-content]');
+        const userPromptForm = chat.querySelector('[data-user-prompt-form]');
+        const input = chat.querySelector('[data-input]');
+
+        const addMessage = (message, isUser, isError = false) => {
+            const messageEl = document.createElement('li');
+            messageEl.classList.add(isUser ? 'user' : 'chatgpt');
+            if (isError) messageEl.classList.add('error');
+            messageEl.innerHTML = message;
+            content.prepend(messageEl);
+        }
+
+        cta.addEventListener('click', () => {
+           modal.style.display = modal.style.display === 'none' ? 'block' : 'none';
+        });
+
+        userPromptForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            console.log(e);
+            const formData = new FormData(e.target);
+            const prompt = formData.get('prompt');
+            addMessage(prompt, true);
+            input.value = '';
+            const response = await fetch(e.target.action, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                return addMessage('Erreur', false, true);
+            }
+
+            const json = await response.json();
+            if (('error' in json)) {
+                addMessage(json.error, false, true);
+            } else if (('fileContent' in json)) {
+                const csvBlob = new Blob([json.fileContent], { type: "text/csv" });
+                const csvURL = window.URL.createObjectURL(csvBlob);
+                addMessage(`<a href="${csvURL}" download="${json.fileName}">${json.fileName}</a>`, false)
+            } else {
+                addMessage(json.answer, false);
+            }
+        });
+    });
+</script>
